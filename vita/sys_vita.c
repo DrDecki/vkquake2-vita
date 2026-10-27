@@ -162,19 +162,70 @@ void *Sys_GetGameAPI(void *parms)
 }
 
 /* ------------------------------------------------------------------------ */
-/* Hunk: plain malloc, the code keeps pointers into it so it never moves    */
+/* Hunk                                                                     */
 /* ------------------------------------------------------------------------ */
+// The model loaders reserve the largest size a model can need (2 MB for an
+// alias model, 16 MB for a map), fill part of it and keep pointers into it,
+// so a block can never move. With plain malloc every reservation stayed
+// whole, and a deathmatch with its player and weapon models ran out of
+// memory. The hunks therefore live in one arena: a hunk takes the first gap
+// big enough for its reservation and Hunk_End cuts it down to what was used.
+#define HUNK_ARENA_SIZE (64 * 1024 * 1024)
+#define HUNK_MAX_BLOCKS 2048
+
+typedef struct
+{
+	int off, size;
+} hunkblock_t;
+
+static byte *arena;
+static hunkblock_t blocks[HUNK_MAX_BLOCKS]; // sorted by offset
+static int numblocks;
+static int openblock = -1; // index of the hunk between Hunk_Begin and Hunk_End
 static byte *membase;
 static int hunkmaxsize;
 static int cursize;
 
+static int Hunk_FindGap(int size)
+{
+	int i, start = 0;
+	for (i = 0; i < numblocks; i++)
+	{
+		if (blocks[i].off - start >= size)
+			return i;
+		start = blocks[i].off + blocks[i].size;
+	}
+	return HUNK_ARENA_SIZE - start >= size ? numblocks : -1;
+}
+
 void *Hunk_Begin(int maxsize)
 {
-	hunkmaxsize = maxsize;
+	int at;
+
+	hunkmaxsize = (maxsize + 31) & ~31;
 	cursize = 0;
-	membase = malloc(hunkmaxsize);
-	if (!membase)
-		Sys_Error("unable to allocate %d bytes for the hunk", hunkmaxsize);
+	openblock = -1;
+	if (!arena)
+		arena = malloc(HUNK_ARENA_SIZE);
+	at = arena && numblocks < HUNK_MAX_BLOCKS ? Hunk_FindGap(hunkmaxsize) : -1;
+	if (at >= 0)
+	{
+		int off = at ? blocks[at - 1].off + blocks[at - 1].size : 0;
+		memmove(&blocks[at + 1], &blocks[at], (numblocks - at) * sizeof(blocks[0]));
+		blocks[at].off = off;
+		blocks[at].size = hunkmaxsize;
+		numblocks++;
+		openblock = at;
+		membase = arena + off;
+	}
+	else
+	{
+		// the arena is full: an ordinary block that keeps its full size
+		Com_Printf("Hunk_Begin: arena full, using %d bytes of heap\n", hunkmaxsize);
+		membase = malloc(hunkmaxsize);
+		if (!membase)
+			Sys_Error("unable to allocate %d bytes for the hunk", hunkmaxsize);
+	}
 	memset(membase, 0, hunkmaxsize);
 	return membase;
 }
@@ -192,14 +243,33 @@ void *Hunk_Alloc(int size)
 
 int Hunk_End(void)
 {
+	if (openblock >= 0)
+		blocks[openblock].size = cursize ? cursize : 32;
+	openblock = -1;
 	return cursize;
 }
 
 void Hunk_Free(void *base)
 {
+	byte *p = base;
+	int i;
+
+	if (arena && p >= arena && p < arena + HUNK_ARENA_SIZE)
+	{
+		for (i = 0; i < numblocks; i++)
+		{
+			if (arena + blocks[i].off == p)
+			{
+				memmove(&blocks[i], &blocks[i + 1], (numblocks - i - 1) * sizeof(blocks[0]));
+				numblocks--;
+				break;
+			}
+		}
+	}
+	else
+		free(base);
 	if (base == membase)
 		membase = NULL;
-	free(base);
 }
 
 /* ------------------------------------------------------------------------ */
