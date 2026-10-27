@@ -6,7 +6,7 @@ This is Quake II running on the PS Vita with its Vulkan renderer. Not a
 software renderer, not OpenGL, but the actual Vulkan code from
 [vkQuake2](https://github.com/kondrak/vkQuake2). The Vita has no Vulkan
 driver, so this port runs on [VkVita](https://github.com/DrDecki/vkvita), a
-Vulkan layer I wrote on top of the Vita's GXM graphics API. Even the
+Vulkan layer Claude wrote on top of the Vita's GXM graphics API. Even the
 original SPIR-V shaders are used. They get translated for the Vita GPU when
 the game starts.
 
