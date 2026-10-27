@@ -18,8 +18,6 @@ What works:
 - 2x MSAA by default, 4x if you want it
 - 60 FPS almost everywhere
 
-It has been tested on a PS Vita 1000 on firmware 3.65 with Enso.
-
 ## What you need
 
 - a PS Vita with HENkaku or Enso and VitaShell
@@ -53,9 +51,6 @@ It has been tested on a PS Vita 1000 on firmware 3.65 with Enso.
 
 5. Start the game. The first start takes a bit longer because all shaders
    are compiled once. After that they are loaded from a cache.
-
-The easiest way to copy the files is VitaShell's FTP server (press SELECT in
-VitaShell) with any FTP client, or a USB cable.
 
 ## Controls
 
