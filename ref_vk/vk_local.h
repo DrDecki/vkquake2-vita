@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #  define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if (defined(__linux__) || defined(__FreeBSD__)) && !defined(__vita__)
 #  define VK_USE_PLATFORM_XLIB_KHR
 #endif
 

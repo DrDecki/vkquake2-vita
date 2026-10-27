@@ -47,6 +47,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	CPUSTRING	"ARM64"
 #endif
 
+#elif defined __vita__
+
+#define BUILDSTRING "PS Vita"
+#define CPUSTRING "ARM"
+
 #elif defined __linux__
 
 #ifdef NDEBUG

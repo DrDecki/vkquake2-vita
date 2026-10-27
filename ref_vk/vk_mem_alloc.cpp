@@ -20,4 +20,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define VMA_IMPLEMENTATION
 #include <vulkan/vulkan.h>
+
+#ifdef __vita__
+// The renderer uses the allocator from one thread only, so no locking is
+// needed, and this way it does not depend on the C++ thread support.
+class VmaVitaMutex
+{
+public:
+	void Lock() {}
+	void Unlock() {}
+	bool TryLock() { return true; }
+};
+class VmaVitaRWMutex
+{
+public:
+	void LockRead() {}
+	void UnlockRead() {}
+	bool TryLockRead() { return true; }
+	void LockWrite() {}
+	void UnlockWrite() {}
+	bool TryLockWrite() { return true; }
+};
+#define VMA_MUTEX VmaVitaMutex
+#define VMA_RW_MUTEX VmaVitaRWMutex
+#define VMA_USE_STL_SHARED_MUTEX 0
+#endif
 #include "vk_mem_alloc.h"
