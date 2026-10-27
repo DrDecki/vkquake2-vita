@@ -19,8 +19,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// vid_vita.c -- the Vulkan renderer is linked in, so there is no library to
-// load. Based on linux/vid_so.c.
 
 #include "../client/client.h"
 #include "vita.h"
@@ -29,7 +27,6 @@ refexport_t GetRefAPI(refimport_t rimp);
 
 refexport_t re;
 
-// the renderer is linked in and already defines these, they are the same cvars
 extern cvar_t *vid_gamma;
 extern cvar_t *vid_ref;
 extern cvar_t *vid_fullscreen;
@@ -75,10 +72,8 @@ void VID_Restart_f(void)
 	vid_ref->modified = true;
 }
 
-// every mode is the Vita screen
 qboolean VID_GetModeInfo(int *width, int *height, int mode)
 {
-	(void)mode;
 	*width = VITA_SCREEN_WIDTH;
 	*height = VITA_SCREEN_HEIGHT;
 	return true;

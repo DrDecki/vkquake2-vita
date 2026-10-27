@@ -18,9 +18,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// net_vita.c -- UDP over the Vita network stack (sceNet), plus the loopback
-// buffers for the local server. Follows linux/net_udp.c. Addresses are
-// dotted IPs; host names are not resolved.
 
 #include "../qcommon/qcommon.h"
 
@@ -55,7 +52,6 @@ static unsigned short net_htons(unsigned short v)
 	return (unsigned short)((v << 8) | (v >> 8));
 }
 
-// sceNet errors are 0x804101xx with the errno in the low byte
 static int net_errno(int r)
 {
 	return r & 0xFF;
@@ -120,7 +116,6 @@ char *NET_BaseAdrToString(netadr_t a)
 	return s;
 }
 
-// localhost, or a dotted address with an optional :port
 qboolean NET_StringToAdr(char *s, netadr_t *a)
 {
 	int ip[4], port = 0, n;
@@ -176,7 +171,6 @@ static void NET_SendLoopPacket(netsrc_t sock, int length, void *data, netadr_t t
 {
 	int i;
 	loopback_t *loop = &loopbacks[sock ^ 1];
-	(void)to;
 
 	i = loop->send & (MAX_LOOPBACK - 1);
 	loop->send++;
@@ -294,7 +288,6 @@ static void NET_OpenIP(void)
 		ip_sockets[NS_CLIENT] = NET_Socket(ip->string, PORT_ANY);
 }
 
-// A single player game only uses the loopback buffers
 void NET_Config(qboolean multiplayer)
 {
 	int i;
@@ -335,7 +328,6 @@ void NET_Init(void)
 
 	if (sceSysmoduleIsLoaded(SCE_SYSMODULE_NET) != SCE_SYSMODULE_LOADED)
 		sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
-	// another part of the app may have set the stack up already
 	if (sceNetShowNetstat() == SCE_NET_ERROR_ENOTINIT)
 	{
 		param.memory = net_pool;
@@ -377,5 +369,4 @@ void NET_Shutdown(void)
 
 void NET_Sleep(int msec)
 {
-	(void)msec;
 }

@@ -19,9 +19,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// snd_vita.c -- the mixer paints into a ring buffer, a thread hands it to
-// the audio port one chunk at a time. The play position is the chunk the
-// thread is on, so it can not drift away from what is really playing.
 
 #include <psp2/audioout.h>
 #include <psp2/kernel/threadmgr.h>
@@ -30,10 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../client/snd_loc.h"
 
 #define SAMPLE_RATE      48000
-#define CHUNK_FRAMES     512                    // about 10.7 ms
-#define CHUNKS           32                     // 16384 frames, more than the mix ahead
+#define CHUNK_FRAMES     512
+#define CHUNKS           32
 #define BUFFER_FRAMES    (CHUNK_FRAMES * CHUNKS)
-#define BUFFER_BYTES     (BUFFER_FRAMES * 4)    // 16 bit stereo
+#define BUFFER_BYTES     (BUFFER_FRAMES * 4)
 
 static byte *audio_buffer;
 static volatile int play_chunk;
@@ -45,7 +42,6 @@ static int audio_thread(SceSize args, void *argp)
 {
 	int port;
 	int vol[2] = { SCE_AUDIO_VOLUME_0DB, SCE_AUDIO_VOLUME_0DB };
-	(void)args; (void)argp;
 
 	port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_MAIN, CHUNK_FRAMES, SAMPLE_RATE, SCE_AUDIO_OUT_MODE_STEREO);
 	if (port < 0)
@@ -58,7 +54,6 @@ static int audio_thread(SceSize args, void *argp)
 	running = 1;
 	while (!stop_audio)
 	{
-		// blocks until the previous chunk has been taken
 		sceAudioOutOutput(port, audio_buffer + play_chunk * CHUNK_FRAMES * 4);
 		play_chunk = (play_chunk + 1) % CHUNKS;
 	}
@@ -84,7 +79,7 @@ qboolean SNDDMA_Init(void)
 	dma.samplebits = 16;
 	dma.speed = SAMPLE_RATE;
 	dma.channels = 2;
-	dma.samples = BUFFER_FRAMES * 2; // mono samples in the whole buffer
+	dma.samples = BUFFER_FRAMES * 2;
 	dma.samplepos = 0;
 	dma.submission_chunk = 1;
 	dma.buffer = audio_buffer;

@@ -10,19 +10,16 @@ RUST = (176, 74, 32); EMBER = (235, 128, 48); DARK = (20, 14, 11); MID = (46, 32
 def background(w, h):
     im = Image.new("RGB", (w * SS, h * SS), DARK)
     d = ImageDraw.Draw(im)
-    # vertical gradient
     for y in range(h * SS):
         t = y / (h * SS)
         c = tuple(int(DARK[k] + (MID[k] - DARK[k]) * (1 - abs(t - 0.45) * 1.8 if abs(t - 0.45) < 0.55 else 0)) for k in range(3))
         d.line([(0, y), (w * SS, y)], fill=c)
-    # diagonal plate lines like riveted metal
     step = 48 * SS
     for x in range(-h * SS, w * SS, step):
         d.line([(x, h * SS), (x + h * SS, 0)], fill=(34, 24, 18), width=2 * SS)
     return im, d
 
 def emblem(d, cx, cy, r):
-    # an original angular emblem: a broken hexagon with a slash, not the Quake logo
     import math
     pts = [(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a))) for a in range(-90, 270, 60)]
     w = max(SS, int(r * 0.14))

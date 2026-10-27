@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Builds vkQuake2 for the PC against the VkVita host mock, to catch link
-# errors and crashes before running on a Vita.
-#   VKV=<vkvita tree> VKV_OBJS=<dir with the host test objects> VITA_HEADERS=<vitasdk include>
-#   SPIRV_CROSS=<link flags> OUT=<dir> vita/host/build_host.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="${OUT:-$ROOT/build-host}"
@@ -14,7 +10,6 @@ CF=(-g -O1 -fno-omit-frame-pointer -fsanitize=address -fno-strict-aliasing -w
     -DVMA_BUFFER_DEVICE_ADDRESS=0 -DVMA_MEMORY_PRIORITY=0 -DVMA_KHR_MAINTENANCE4=0 -DVMA_KHR_MAINTENANCE5=0
     -DVMA_GET_PHYSICAL_DEVICE_PROPERTIES2=0 -DVMA_STATS_STRING_ENABLED=0
     -isystem "$VITA_HEADERS" -I "$VKV/include" -I "$VKV/third_party/Vulkan-Headers/include" -I "$ROOT")
-# the game was its own library, these names clash with the engine once linked in
 GAME_CF=(-Dmaxclients=game_maxclients -Ddedicated=game_dedicated)
 files=$(sed -n '/set(CLIENT_SOURCES/,/^add_executable/p' "$ROOT/vita/CMakeLists.txt" | grep -oE "[a-z_0-9]+/[a-z_0-9]+\.(c|cpp)")
 objs=()

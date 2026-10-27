@@ -1,160 +1,140 @@
 <p align="center"><img src="vkQuake2.png"></p>
 
-### Build status
-[![Linux](https://github.com/kondrak/vkQuake2/actions/workflows/linux.yml/badge.svg)](https://github.com/kondrak/vkQuake2/actions/workflows/linux.yml)
-[![MacOS](https://github.com/kondrak/vkQuake2/actions/workflows/macos.yml/badge.svg)](https://github.com/kondrak/vkQuake2/actions/workflows/macos.yml)
-[![Windows](https://github.com/kondrak/vkQuake2/actions/workflows/windows.yml/badge.svg)](https://github.com/kondrak/vkQuake2/actions/workflows/windows.yml)
+# vkQuake2 for PS Vita
 
-Overview
-===
-This is the official Quake 2 code v3.21 with Vulkan support and mission packs included. The goal of this project is to maintain as much compatibility as possible with the original game - just pure, vanilla Quake 2 experience as we knew it back in 1997. There are, however, a few notable differences that made the cut for various reasons:
+This is Quake II running on the PS Vita with its Vulkan renderer. Not a
+software renderer, not OpenGL, but the actual Vulkan code from
+[vkQuake2](https://github.com/kondrak/vkQuake2). The Vita has no Vulkan
+driver, so this port runs on [VkVita](https://github.com/DrDecki/vkvita), a
+Vulkan layer I wrote on top of the Vita's GXM graphics API. Even the
+original SPIR-V shaders are used. They get translated for the Vita GPU when
+the game starts.
 
-- world colors have been slightly upgraded - the game's original, darker look can be toggled with the `vk_postprocess` console command
-- 64-bit support, additional screen resolutions and DPI awareness have been added
-- underwater vision warp effect similar to software renderer has been implemented and enabled by default
-- antialiasing and sample shading is now natively supported
-- anisotropic filtering toggle has been added
-- players can now change texture filtering modes from within the video menu
-- mouse acceleration has been disabled
-- console contents can be scrolled with a mouse wheel
-- HUD elements, menus and console text are now scaled accordingly on higher screen resolutions (can be overridden with the `hudscale` console command)
-- viewmodel weapons are no longer hidden when FOV > 90
-- Vulkan renderer fixes broken warp texture effect (water, lava, slime) seen in OpenGL
-- software renderer has been completely replaced with [KolorSoft 1.1](https://github.com/qbism/Quake2-colored-refsoft) - this adds colored lighting and fixes severe instabilities of the original implementation
-- triangle fans have been replaced with indexed triangle lists due to Metal/MoltenVK limitations
-- on Linux, sound is now handled by ALSA instead of OSS
-- support for OGG/FLAC/MP3/WAV music has been added in addition to standard CD audio
-- music volume slider has been added (OGG/FLAC/MP3/WAV only, CD music still plays at full volume as originally intended)
-- game menus have been slightly improved
-- added Nightmare/Hard+ skill to the game menu
-- added the `aimfix` console command, backported from Berserker@Quake2
+What works:
 
-A more detailed description of the thought process behind this project can be found in my [blog post](https://kondrak.github.io/posts/2020-09-20-porting-quake2-to-vulkan/), where I explain the overall design, how I attacked some of the problems and also how things developed after the initial release.
+- the whole single player campaign
+- deathmatch over Wi-Fi, against other Vitas or PCs
+- sound effects and the ogg soundtrack
+- 2x MSAA by default, 4x if you want it
+- 60 FPS almost everywhere
 
-Building
-===
-For extra challenge I decided to base vkQuake2 on the original id Software code. Because of this, there are no dependencies on external SDL-like libraries and the entire project is mostly self-contained. This also implies that some of the original bugs could be present.
+It has been tested on a PS Vita 1000 on firmware 3.65 with Enso.
 
-## Windows
-- download and install the latest [Vulkan SDK](https://vulkan.lunarg.com/)
-- install [Visual Studio Community 2022](https://www.visualstudio.com/products/free-developer-offers-vs) with the latest Windows SDK and C++ MFC for build tool and C++ MFC for x64/x86 in case you're using Visual Studio Community 2026
-- open `quake2.sln` and choose the target architecture (x86/x64) - it should build without any additional steps
+## What you need
 
-## Linux
-Unfortunately, Linux code for Quake 2 has not aged well and for that reason only the Vulkan renderer is available for use at this time. Build steps assume that Ubuntu is the target distribution:
-- install required dependencies:
+- a PS Vita with HENkaku or Enso and VitaShell
+- the game files of Quake II. They are not included, you need your own copy
+  (Steam, GOG or the original CD, version 3.20)
+
+## Installation
+
+1. Download `vkquake2.vpk` from the
+   [releases](https://github.com/DrDecki/vkquake2-vita/releases) and install
+   it with VitaShell.
+
+2. Create the folder `ux0:data/vkquake2/baseq2` on your Vita.
+
+3. Copy these files from the `baseq2` folder of your Quake II install into it:
+
+   ```
+   ux0:data/vkquake2/baseq2/pak0.pak
+   ux0:data/vkquake2/baseq2/pak1.pak
+   ux0:data/vkquake2/baseq2/pak2.pak
+   ux0:data/vkquake2/baseq2/players/
+   ```
+
+   `pak0.pak` is all you need for the single player game. `pak1.pak` has the
+   deathmatch maps, and the `players` folder has the player models. Without
+   it other players show up as white diamonds.
+
+4. Optional: for music, copy the `.ogg` tracks (`track02.ogg` to
+   `track21.ogg`) from the GOG or Steam release into
+   `ux0:data/vkquake2/baseq2/music/`.
+
+5. Start the game. The first start takes a bit longer because all shaders
+   are compiled once. After that they are loaded from a cache.
+
+The easiest way to copy the files is VitaShell's FTP server (press SELECT in
+VitaShell) with any FTP client, or a USB cable.
+
+## Controls
+
+| Button | Action |
+|---|---|
+| Left stick | Move |
+| Right stick | Look |
+| R | Fire |
+| L or Cross | Jump |
+| Circle | Crouch |
+| Square / Triangle | Previous / next weapon |
+| D-pad | Inventory |
+| Select | Help computer |
+| Start | Menu |
+
+In menus the d-pad moves, Cross selects and Circle goes back. You can rebind
+everything in the controls menu. The buttons show up as AUX keys there. The
+look speed is `in_lookspeed` and `in_lookinvert 1` inverts the right stick.
+
+## Multiplayer
+
+Connect the Vita to Wi-Fi before you start the game.
+
+**Hosting on the Vita:** Multiplayer, Start Network Server, pick a map and
+start. Other players connect to the Vita's IP address. The game prints it in
+the console on startup, and you can also find it in the Vita's network
+settings.
+
+**Joining from the Vita:** Multiplayer, Join Network Server. Servers on your
+local network show up in the list. To join one directly, add its IP address
+to the address book, for example `192.168.1.20` or `192.168.1.20:27910`. Host
+names are not resolved, so use the IP.
+
+**Playing against a PC:** any Quake II client that speaks the original
+network protocol works. I tested it with
+[Yamagi Quake II](https://www.yamagi.org/quake2/). Put the same `pak` files
+and the `players` folder into its `baseq2` folder and type
+`connect <ip of the vita>` in its console.
+
+## Settings
+
+Antialiasing can be changed under Options, Video. 2x is the default. 4x
+usually still runs at 60 FPS but has less headroom in big fights.
+
+## If something goes wrong
+
+Everything gets logged to `ux0:data/vkquake2/`:
+
+- `vkquake2.log` is the game console
+- `vkvita.log` is the renderer
+
+If the game closes on its own, the reason is usually at the end of
+`vkquake2.log`. Please attach both files when you open an issue.
+
+## Building it yourself
+
+You need [VitaSDK](https://vitasdk.org) and a checkout of
+[VkVita](https://github.com/DrDecki/vkvita).
+
+```sh
+cmake -S vita -B build-vita -DVKVITA_DIR=/path/to/vkvita
+cmake --build build-vita -j
 ```
-sudo apt install make gcc g++ mesa-common-dev libglu1-mesa-dev libxxf86dga-dev libxxf86vm-dev libasound2-dev libx11-dev libxcb1-dev libxext-dev
-```
-- Install the latest [Vulkan SDK](https://vulkan.lunarg.com/) - the easiest way is to use [LunarG Ubuntu Packages](https://vulkan.lunarg.com/sdk/home#linux) - just follow the instructions and there will be no additional steps required. If you decide for a manual installation, make sure that proper environment variables are set afterwards by adding the following section to your `.bashrc` file (replace SDK version and location with the ones corresponding to your system):
-```
-export VULKAN_SDK=/home/user/VulkanSDK/1.4.350.0/x86_64
-export PATH=$VULKAN_SDK/bin:$PATH
-export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
-export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
-```
-- make sure your graphics drivers support Vulkan (run `vulkaninfo` to verify) - if not, you can get them with:
-```
-sudo apt install mesa-vulkan-drivers
-```
-- enter the `linux` directory and type `make release` or `make debug` depending on which variant you want to build - output binaries will be placed in `linux/releasex64` and `linux/debugx64` subdirectories respectively
 
-## MacOS
-- download and extract the latest [Vulkan SDK](https://vulkan.lunarg.com/)
-- install XCode 10.1 (or later) and add the `VULKAN_SDK` environment variable to Locations/Custom Paths - make it point to the downloaded SDK
-- open `macos/vkQuake2.xcworkspace` - it should build without any additional steps
-- alternatively, you can compile the game from the command line - modify your `.bash_profile` and add the following entries (replace SDK version and location with the ones corresponding to your system):
-```
-export VULKAN_SDK=/home/user/VulkanSDK/1.4.350.1
-export VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/MoltenVK_icd.json
-export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
-```
-- enter the `macos` directory and run `make release-xcode` or `make debug-xcode` depending on which variant you want to build - output binaries will be placed in `macos/vkQuake2` subdirectory
-- it is also possible to build the game with Command Line Developer Tools if you have them installed: enter the `macos` directory and run `make release` or `make debug` - output binaries will be placed in `macos/release` and `macos/debug` subdirectories respectively
+That gives you `build-vita/vkquake2.vpk` (title ID `VKQUAKE02`). All the Vita
+code is in the `vita` folder. The changes to the rest of the code are small
+and marked with `__vita__`. `vita/host/build_host.sh` builds the whole game
+for Linux against the VkVita test mock, which is handy for catching crashes
+before you copy anything to the Vita.
 
-This project uses the Vulkan loader bundled with the SDK, rather than directly linking against `MoltenVK.framework`. This is done so that validation layers are available for debugging. Builds have been tested using MacOS 10.14.2.
+## Credits
 
-## FreeBSD
-- install required Vulkan packages:
-```
-pkg install vulkan-tools vulkan-validation-layers
-```
-- make sure your graphics drivers support Vulkan (run `vulkaninfo` to verify) - if not, you should either update them or find a package that is best suited for your hardware configuration
-- enter the `linux` directory and type `make release` or `make debug` depending on which variant you want to build - output binaries will be placed in `linux/releasex64` and `linux/debugx64` subdirectories respectively
+- id Software for Quake II and its source code
+- Krzysztof Kondrak for vkQuake2. The original README is in
+  [README-vkQuake2.md](README-vkQuake2.md)
+- Felipe Izzo for vitaQuakeII, which parts of the system code are based on
+- [stb_vorbis](https://github.com/nothings/stb) by Sean Barrett for the music
 
-## Raspberry Pi 4
-Thanks to the effort of [Igalia](https://www.igalia.com/) and their [V3DV Driver](https://blogs.igalia.com/itoral/2020/07/23/v3dv_vulkan_driver_update/), it is possible to compile and run vkQuake2 on Raspberry Pi 4. Same build instructions as for Linux apply.
+## License
 
-Running
-===
-## Windows
-The Visual Studio C++ Redistributable is required to run the application: [32-bit](https://aka.ms/vs/16/release/vc_redist.x86.exe) or [64-bit](https://aka.ms/vs/16/release/vc_redist.x64.exe) depending on the chosen architecture. These are provided automatically if you have Visual Studio installed.
-
-## All platforms
-The [release package](https://github.com/kondrak/vkQuake2/releases) comes only with the Quake 2 Demo content to showcase Vulkan functionality. For full experience, copy retail `.pak`, model and video files into the `baseq2` directory and run the executable. For mission packs, copy necessary data to `rogue` ("Ground Zero"), `xatrix` ("The Reckoning"), `zaero` ("Quake II: Zaero") and `smd` ("Slight Mechanical Destruction") directories respectively. You can then start the game with either `./quake2 +set game rogue`, `./quake2 +set game xatrix`, `./quake2 +set game zaero` or `./quake2 +set game smd`.
-
-## Music
-This project uses [Miniaudio](https://github.com/dr-soft/miniaudio) for music playback if the original game CD is not available. For standard Quake 2, copy all tracks into the `baseq2/music` directory following the `trackXX.[ogg,flac,mp3,wav]` naming scheme (so track02.ogg, track03.ogg... for OGG files etc.). For "Ground Zero" and "The Reckoning", copy the tracks to `rogue/music` and `xatrix/music` directories respectively. For additional control over the playback, use the `miniaudio [on,off,play [X],loop [X],stop,pause,resume,info]` console command.
-
-Console commands
-===
-
-The following commands are available when using the Vulkan renderer:
-
-| Command                 | Action                                                  |
-|-------------------------|:--------------------------------------------------------|
-| `vk_validation`         | Toggle validation layers:<br>`0` - disabled (default in Release)<br> `1` - only errors and warnings<br>`2` - full validation (default in Debug)<br>`3` - enables `VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT` |
-| `vk_strings`            | Print some basic Vulkan/GPU information.                                    |
-| `vk_mem`                | Print dynamic vertex/index/uniform/triangle fan buffer memory and descriptor set usage statistics.          |
-| `vk_device`             | Specify index of the preferred Vulkan device on systems with multiple GPUs:<br>`-1` - prefer first DISCRETE_GPU (default)<br>`0..n` - use device #n (full list of devices is returned by `vk_strings` command) |
-| `vk_msaa`               | Toggle MSAA ([multisampling](https://en.wikipedia.org/wiki/Multisample_anti-aliasing)):<br>`0` - off (default)<br>`1` - MSAAx2<br>`2` - MSAAx4<br>`3` - MSAAx8<br>`4` - MSAAx16 |
-| `vk_sampleshading`      | Toggle sample shading ([supersampling](https://en.wikipedia.org/wiki/Supersampling)) for MSAA. (default: `0`) |
-| `vk_mode`               | Vulkan video mode (default: `11`). Setting this to `-1` uses a custom screen resolution defined by `r_customwidth` (default: `1024`) and `r_customheight` (default: `768`) console variables. |
-| `vk_flashblend`         | Toggle the blending of lights onto the environment. (default: `0`)            |
-| `vk_polyblend`          | Blend fullscreen effects: blood, powerups etc. (default: `1`)                 |
-| `vk_skymip`             | Toggle the usage of mipmap information for the sky graphics. (default: `0`)   |
-| `vk_finish`             | Inserts a `vkDeviceWaitIdle()` call on frame render start (default: `0`).<br>Don't use this, it's there just for the sake of having a `gl_finish` equivalent! |
-| `vk_point_particles`    | Toggle between using POINT_LIST and textured triangles for particle rendering. (default: `1`) |
-| `vk_particle_size`      | Rendered particle size. (default: `40`)                    |
-| `vk_particle_att_a`     | Intensity of the particle A attribute. (default: `0.01`)   |
-| `vk_particle_att_b`     | Intensity of the particle B attribute. (default: `0`)      |
-| `vk_particle_att_c`     | Intensity of the particle C attribute. (default: `0.01`)   |
-| `vk_particle_min_size`  | The minimum size of a rendered particle. (default: `2`)    |
-| `vk_particle_max_size`  | The maximum size of a rendered particle. (default: `40`)   |
-| `vk_lockpvs`            | Lock current PVS table. (default: `0`)                     |
-| `vk_clear`              | Clear the color buffer each frame. (default: `0`)          |
-| `vk_modulate`           | Texture brightness modifier. (default: `1`)                |
-| `vk_shadows`            | Draw experimental entity shadows. (default: `0`)           |
-| `vk_picmip`             | Shrink factor for the textures. (default: `0`)             |
-| `vk_round_down`         | Toggle the rounding of texture sizes. (default: `1`)       |
-| `vk_log`                | Log frame validation data to file. (default: `0`)          |
-| `vk_dynamic`            | Use dynamic lighting. (default: `1`)                       |
-| `vk_showtris`           | Display mesh triangles. (default: `0`)                     |
-| `vk_lightmap`           | Display lightmaps. (default: `0`)                          |
-| `vk_aniso`              | Toggle anisotropic filtering. (default: `1`)               |
-| `vk_vsync`              | Toggle vertical sync. (default: `0`)                       |
-| `vk_postprocess`        | Toggle additional color/gamma correction. (default: `1`)   |
-| `vk_underwater`         | Toggle player vision warp when underwater. (default: `1`)  |
-| `vk_restart`            | Recreate entire Vulkan subsystem.                          |
-| `vk_mip_nearfilter`     | Use nearest-neighbor filtering for mipmaps. (default: `0`) |
-| `vk_texturemode`        | Change current texture filtering mode:<br>`VK_NEAREST` - nearest-neighbor interpolation, no mipmaps<br>`VK_LINEAR` - linear interpolation, no mipmaps<br>`VK_MIPMAP_NEAREST` - nearest-neighbor interpolation with mipmaps<br>`VK_MIPMAP_LINEAR` - linear interpolation with mipmaps (default) |
-| `vk_lmaptexturemode`    | Same as `vk_texturemode` but applied to lightmap textures. |
-| `vk_fullscreen_exclusive` | Windows only: toggle usage of exclusive fullscreen mode (default: `1`). Note that when this option is enabled, there is no guarantee that exclusive fullscreen can be acquired on your system. |
-
-Acknowledgements
-===
-- Sascha Willems for his [Vulkan Samples](https://github.com/SaschaWillems/Vulkan)
-- Adam Sawicki for [Vulkan Memory Allocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) and tips on how to use it as efficiently as possible
-- Axel Gneiting for [vkQuake](https://github.com/Novum/vkQuake) which was a great inspiration and a rich source of knowledge
-- LunarG team and the Khronos Group for their invaluable help and resources
-- Dorian Apanel and the Intel team for technical support, inspiring email discussions and blazing-fast reaction to driver bug reports!
-
-See also
-===
-- [yquake2/ref_vk](https://github.com/yquake2/ref_vk) - Vulkan Renderer Library for Yamagi Quake 2 based on vkQuake2
-- [vkQuake2 Miniaudio](https://github.com/mackron/vkQuake2) - vkQuake2 fork with added spacialized audio using [Miniaudio](https://github.com/dr-soft/miniaudio) library
-
-Known Issues
-===
-- some Intel GPUs may ignore texture filtering settings in video menu if anisotropic filtering is enabled - this is the result of anisotropic texture filtering being implementation-dependent
-- macOS using Vulkan SDK 1.2.162 or higher: the application may hang on some MacBooks if `vk_sampleshading` is enabled due to a potential bug in the Metal driver causing a deadlock during shader compilation
+GPL 2.0 or later, like Quake II and vkQuake2. The game data is not covered
+by this and is not part of the project.

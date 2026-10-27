@@ -18,13 +18,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// in_vita.c -- buttons become key events, the sticks move and look.
-//
-// Buttons are sent as keys so they can be rebound in the menu and the
-// console: START = ESCAPE, SELECT = TAB, d-pad = arrows, cross = AUX1,
-// circle = AUX2, square = AUX3, triangle = AUX4, L = AUX5, R = AUX7.
-// In menus and the console cross is ENTER and circle is ESCAPE, because the
-// main menu only reacts to those.
 
 #include <math.h>
 #include <psp2/ctrl.h>
@@ -35,12 +28,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern unsigned sys_frame_time;
 
 cvar_t *in_joystick;
-static cvar_t *in_lookspeed;     // degrees per second at full right stick
-static cvar_t *in_lookinvert;    // 1 = pushing up looks down
-static cvar_t *in_deadzone;      // 0..127
+static cvar_t *in_lookspeed;
+static cvar_t *in_lookinvert;
+static cvar_t *in_deadzone;
 
 static uint32_t old_buttons;
-static int lx, ly, rx, ry;       // -128..127 after the dead zone
+static int lx, ly, rx, ry;
 
 typedef struct { uint32_t button; int key; int menu_key; } buttonmap_t;
 static const buttonmap_t button_map[] = {
@@ -59,8 +52,6 @@ static const buttonmap_t button_map[] = {
 };
 #define NUM_BUTTONS (int)(sizeof(button_map) / sizeof(button_map[0]))
 
-// the key each button sent when it went down, so the release matches it
-// even if the menu opened or closed in between
 static int sent_key[NUM_BUTTONS];
 
 static int stick(unsigned char raw)
@@ -69,7 +60,6 @@ static int stick(unsigned char raw)
 	int dz = in_deadzone ? (int)in_deadzone->value : 20;
 	if (v > -dz && v < dz)
 		return 0;
-	// rescale so the edge of the dead zone is zero
 	if (v > 0)
 		return (v - dz) * 127 / (127 - dz);
 	return (v + dz) * 128 / (128 - dz);
@@ -85,7 +75,6 @@ void Sys_SendKeyEvents(void)
 	if (sceCtrlPeekBufferPositive(0, &pad, 1) < 0)
 		return;
 #ifdef VITA_HOST_TEST
-	// the mock presses buttons for the VkVita samples, which would open the menu
 	if (getenv("VITA_TEST_NOPAD"))
 	{
 		memset(&pad, 0, sizeof(pad));
@@ -140,7 +129,6 @@ void IN_Frame(void)
 
 void IN_Activate(qboolean active)
 {
-	(void)active;
 }
 
 void IN_Move(usercmd_t *cmd)
@@ -150,12 +138,10 @@ void IN_Move(usercmd_t *cmd)
 	if (cls.key_dest != key_game || !cl.refresh_prepped)
 		return;
 
-	// left stick: walk and strafe, running follows the run key like the keyboard
 	speed = ((in_speed.state & 1) ^ (int)cl_run->value) ? 2.0f : 1.0f;
 	cmd->forwardmove -= (short)(speed * cl_forwardspeed->value * ly / 128.0f);
 	cmd->sidemove += (short)(speed * cl_sidespeed->value * lx / 128.0f);
 
-	// right stick: look, with a curve so small movements aim precisely
 	look = in_lookspeed->value * cls.frametime;
 	if (rx)
 		cl.viewangles[YAW] -= look * (rx / 128.0f) * fabsf(rx / 128.0f);

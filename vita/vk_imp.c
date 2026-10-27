@@ -19,8 +19,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// vk_imp.c -- the window side of the renderer. On the Vita there is no
-// window: VkVita draws straight to the display through its surface.
 
 #include <vkvita/vkvita.h>
 
@@ -33,7 +31,6 @@ vkwstate_t vkw_state;
 int Vkimp_SetMode(int *pwidth, int *pheight, int mode, qboolean fullscreen)
 {
 	int width, height;
-	(void)fullscreen;
 
 	ri.Con_Printf(PRINT_ALL, "Initializing Vulkan display\n");
 	if (!ri.Vid_GetModeInfo(&width, &height, mode))
@@ -62,7 +59,6 @@ void Vkimp_GetInstanceExtensions(char **extensions, uint32_t *extCount)
 			strcmp(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, props[i].extensionName) == 0;
 	free(props);
 
-	// VK_EXT_headless_surface is the Vita display in VkVita
 	if (extensions)
 	{
 		extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
@@ -97,13 +93,11 @@ void Vkimp_Shutdown(void)
 
 int Vkimp_Init(void *hinstance, void *wndproc)
 {
-	(void)hinstance; (void)wndproc;
 	return true;
 }
 
 void Vkimp_BeginFrame(float camera_separation)
 {
-	(void)camera_separation;
 }
 
 void Vkimp_EndFrame(void)
@@ -112,5 +106,4 @@ void Vkimp_EndFrame(void)
 
 void Vkimp_AppActivate(qboolean active)
 {
-	(void)active;
 }

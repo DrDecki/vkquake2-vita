@@ -19,8 +19,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// sys_vita.c -- PS Vita system layer: entry point, hunk, files, time, log.
-// The hunk and directory search follow vitaQuakeII by Felipe Izzo.
 
 #include <ctype.h>
 #include <errno.h>
@@ -41,8 +39,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../qcommon/qcommon.h"
 #include "vita.h"
 
-// Most memory goes to the newlib heap (hunks, zone, sound). VkVita takes its
-// GPU memory from memory blocks of its own, so it is not part of this.
 int _newlib_heap_size_user = VITA_HEAP_SIZE;
 int sceUserMainThreadStackSize = 8 * 1024 * 1024;
 
@@ -53,9 +49,6 @@ static FILE *log_file;
 
 void *GetGameAPI(void *import);
 
-/* ------------------------------------------------------------------------ */
-/* Log                                                                      */
-/* ------------------------------------------------------------------------ */
 void Vita_Log(const char *fmt, ...)
 {
 	va_list ap;
@@ -92,9 +85,6 @@ char *Sys_ConsoleInput(void)
 	return NULL;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Errors and quitting                                                      */
-/* ------------------------------------------------------------------------ */
 void Sys_Quit(void)
 {
 	CL_Shutdown();
@@ -149,9 +139,6 @@ char *Sys_GetClipboardData(void)
 	return NULL;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Game library, linked in                                                  */
-/* ------------------------------------------------------------------------ */
 void Sys_UnloadGame(void)
 {
 }
@@ -161,15 +148,6 @@ void *Sys_GetGameAPI(void *parms)
 	return GetGameAPI(parms);
 }
 
-/* ------------------------------------------------------------------------ */
-/* Hunk                                                                     */
-/* ------------------------------------------------------------------------ */
-// The model loaders reserve the largest size a model can need (2 MB for an
-// alias model, 16 MB for a map), fill part of it and keep pointers into it,
-// so a block can never move. With plain malloc every reservation stayed
-// whole, and a deathmatch with its player and weapon models ran out of
-// memory. The hunks therefore live in one arena: a hunk takes the first gap
-// big enough for its reservation and Hunk_End cuts it down to what was used.
 #define HUNK_ARENA_SIZE (64 * 1024 * 1024)
 #define HUNK_MAX_BLOCKS 2048
 
@@ -179,9 +157,9 @@ typedef struct
 } hunkblock_t;
 
 static byte *arena;
-static hunkblock_t blocks[HUNK_MAX_BLOCKS]; // sorted by offset
+static hunkblock_t blocks[HUNK_MAX_BLOCKS];
 static int numblocks;
-static int openblock = -1; // index of the hunk between Hunk_Begin and Hunk_End
+static int openblock = -1;
 static byte *membase;
 static int hunkmaxsize;
 static int cursize;
@@ -220,7 +198,6 @@ void *Hunk_Begin(int maxsize)
 	}
 	else
 	{
-		// the arena is full: an ordinary block that keeps its full size
 		Com_Printf("Hunk_Begin: arena full, using %d bytes of heap\n", hunkmaxsize);
 		membase = malloc(hunkmaxsize);
 		if (!membase)
@@ -272,9 +249,6 @@ void Hunk_Free(void *base)
 		membase = NULL;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Time and files                                                           */
-/* ------------------------------------------------------------------------ */
 int Sys_Milliseconds(void)
 {
 	static uint64_t base;
@@ -343,7 +317,6 @@ static char *Sys_FindNextEntry(void)
 char *Sys_FindFirst(char *path, unsigned musthave, unsigned canhave)
 {
 	char *p;
-	(void)musthave; (void)canhave;
 	if (fdir >= 0)
 		Sys_FindClose();
 
@@ -366,7 +339,6 @@ char *Sys_FindFirst(char *path, unsigned musthave, unsigned canhave)
 
 char *Sys_FindNext(unsigned musthave, unsigned canhave)
 {
-	(void)musthave; (void)canhave;
 	return Sys_FindNextEntry();
 }
 
@@ -377,9 +349,6 @@ void Sys_FindClose(void)
 	fdir = -1;
 }
 
-/* ------------------------------------------------------------------------ */
-/* First start: controls that make sense on a Vita                          */
-/* ------------------------------------------------------------------------ */
 static void Vita_WriteDefaultConfig(void)
 {
 	const char *path = VITA_BASEDIR "/baseq2/config.cfg";
@@ -393,23 +362,22 @@ static void Vita_WriteDefaultConfig(void)
 	f = fopen(path, "w");
 	if (!f)
 		return;
-	fputs("// written by vkQuake2 for PS Vita on the first start\n"
-	      "unbindall\n"
+	fputs("unbindall\n"
 	      "bind ESCAPE \"togglemenu\"\n"
-	      "bind AUX7 \"+attack\"\n"          // R
-	      "bind AUX5 \"+moveup\"\n"          // L
-	      "bind AUX1 \"+moveup\"\n"          // cross
-	      "bind AUX2 \"+movedown\"\n"        // circle
-	      "bind AUX3 \"weapprev\"\n"         // square
-	      "bind AUX4 \"weapnext\"\n"         // triangle
+	      "bind AUX7 \"+attack\"\n"
+	      "bind AUX5 \"+moveup\"\n"
+	      "bind AUX1 \"+moveup\"\n"
+	      "bind AUX2 \"+movedown\"\n"
+	      "bind AUX3 \"weapprev\"\n"
+	      "bind AUX4 \"weapnext\"\n"
 	      "bind UPARROW \"invuse\"\n"
 	      "bind DOWNARROW \"inven\"\n"
 	      "bind LEFTARROW \"invprev\"\n"
 	      "bind RIGHTARROW \"invnext\"\n"
-	      "bind TAB \"cmd help\"\n"          // select
+	      "bind TAB \"cmd help\"\n"
 	      "set lookspring 0\n"
 	      "set lookstrafe 0\n"
-	      "set vk_msaa 1\n"                 // 2x
+	      "set vk_msaa 1\n"
 	      "set vk_vsync 1\n"
 	      "set hand 0\n", f);
 	fclose(f);
@@ -420,23 +388,19 @@ static void Vita_ConfigureVkVita(void)
 	VkvConfig cfg;
 	vkvGetDefaultConfig(&cfg);
 	cfg.debugFlags = VKV_DEBUG_LOG_INFO | VKV_DEBUG_LOG_UNSUPPORTED | VKV_DEBUG_DUMP_SHADERS;
-	cfg.compatFlags = VKV_COMPAT_SHADER_CACHE; // later starts load the compiled shaders
+	cfg.compatFlags = VKV_COMPAT_SHADER_CACHE;
 	cfg.logPath = VITA_BASEDIR "/vkvita.log";
 	cfg.shaderDir = VITA_BASEDIR "/shaders";
 	cfg.profileInterval = 600;
 	vkvSetConfig(&cfg);
-	// ux0:data/vkquake2/vkvita.txt can switch on validation and more without a rebuild
+
 	vkvLoadConfigFile(VITA_BASEDIR "/vkvita.txt");
 }
 
-/* ------------------------------------------------------------------------ */
-/* Entry point                                                              */
-/* ------------------------------------------------------------------------ */
 int main(int argc, char **argv)
 {
 	int time, oldtime, newtime;
 	char *args[] = { "vkquake2", "+set", "basedir", VITA_BASEDIR, "+set", "cddir", VITA_BASEDIR };
-	(void)argc; (void)argv;
 
 	scePowerSetArmClockFrequency(444);
 	scePowerSetBusClockFrequency(222);
@@ -450,12 +414,10 @@ int main(int argc, char **argv)
 	Vita_WriteDefaultConfig();
 	Vita_Log("vkQuake2 for PS Vita, data in " VITA_BASEDIR "\n");
 
-	// FPU exceptions off, the game divides by zero now and then
 	sceKernelChangeThreadVfpException(0x0800009FU, 0x0);
 
 #ifdef VITA_HOST_TEST
-	// PC test build against the VkVita mock: VITA_TEST_MAP starts a map,
-	// VITA_TEST_FRAMES ends the run
+
 	char *testArgs[16];
 	int testArgc = 0, testFrames = getenv("VITA_TEST_FRAMES") ? atoi(getenv("VITA_TEST_FRAMES")) : 300;
 	for (unsigned k = 0; k < sizeof(args) / sizeof(args[0]); k++)
@@ -467,7 +429,6 @@ int main(int argc, char **argv)
 	}
 	if (getenv("VITA_TEST_ARGS"))
 	{
-		// space separated, for example "+set developer 1"
 		char *a = strdup(getenv("VITA_TEST_ARGS")), *tok = strtok(a, " ");
 		while (tok && testArgc < 16)
 		{

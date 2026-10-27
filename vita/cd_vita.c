@@ -8,8 +8,6 @@ as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
 */
-// cd_vita.c -- there is no CD drive. The music comes from the .ogg tracks
-// in baseq2/music, see music_vita.c.
 
 #include "../client/client.h"
 
@@ -24,7 +22,6 @@ void CDAudio_Shutdown(void)
 
 qboolean CDAudio_Play(int track, qboolean looping)
 {
-	(void)track; (void)looping;
 	return false;
 }
 
@@ -38,5 +35,4 @@ void CDAudio_Update(void)
 
 void CDAudio_Activate(qboolean active)
 {
-	(void)active;
 }

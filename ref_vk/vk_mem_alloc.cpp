@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vulkan/vulkan.h>
 
 #ifdef __vita__
-// The renderer uses the allocator from one thread only, so no locking is
-// needed, and this way it does not depend on the C++ thread support.
 class VmaVitaMutex
 {
 public:

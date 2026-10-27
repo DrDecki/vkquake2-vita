@@ -1,15 +1,9 @@
-/*
- * The system calls vkQuake2 makes beyond what the VkVita mock already has,
- * for the PC test build. Paths like ux0:data/x go to $MOCK_ROOT/ux0/data/x.
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
 #include <psp2/audioout.h>
 #include <psp2/io/dirent.h>
 #include <psp2/io/stat.h>
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/power.h>
 
-/* after the Vita headers: glibc turns st_mtime into a macro */
 #include <dirent.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -25,7 +19,6 @@ static void port_path(char *out, size_t cap, const char *p) {
 	else snprintf(out, cap, "%s/%s", root, p);
 }
 
-/* newlib on the Vita understands ux0: paths, glibc does not */
 FILE *mock_fopen(const char *path, const char *mode) {
 	char p[1024];
 	port_path(p, sizeof(p), path);
@@ -75,7 +68,6 @@ int sceIoDclose(SceUID fd) {
 	return 0;
 }
 
-/* threads: one pthread per kernel thread */
 typedef struct { SceKernelThreadEntry entry; pthread_t th; int used; } MockThread;
 static MockThread g_threads[8];
 static void *thread_main(void *arg) {
@@ -109,8 +101,6 @@ int sceKernelDeleteThread(SceUID id) {
 	return 0;
 }
 
-/* audio: each output call takes as long as its samples would play. With
- * MOCK_BGM_DUMP set the BGM port writes its samples there as raw s16 stereo. */
 static struct { int type, len, freq; } g_ports[4];
 static FILE *g_bgm_dump;
 int sceAudioOutOpenPort(SceAudioOutPortType type, int len, int freq, SceAudioOutMode mode) {
@@ -146,10 +136,6 @@ int sceAudioOutReleasePort(int port) {
 	return 0;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Network: sceNet on top of POSIX UDP sockets, so two PC builds can play   */
-/* against each other                                                       */
-/* ------------------------------------------------------------------------ */
 #include <psp2/net/net.h>
 #include <psp2/net/netctl.h>
 #include <psp2/sysmodule.h>

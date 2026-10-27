@@ -1,10 +1,3 @@
-# vkQuake2 for PS Vita, built on VkVita.
-#
-#   cmake -S vita -B build-vita -DVKVITA_DIR=/path/to/vkvita
-#   cmake --build build-vita -j
-#
-# Without VKVITA_DIR an installed VkVita (cmake --install in the VkVita repo)
-# is used. Game data goes to ux0:data/vkquake2/baseq2.
 cmake_minimum_required(VERSION 3.16)
 
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
@@ -72,7 +65,6 @@ foreach(f ${CLIENT_SOURCES} ${COMMON_SOURCES} ${SERVER_SOURCES} ${REF_SOURCES} $
   list(APPEND SOURCES ${Q2}/${f})
 endforeach()
 
-# the game was its own library, these names clash with the engine once linked in
 foreach(f ${GAME_SOURCES})
   set_source_files_properties(${Q2}/${f} PROPERTIES COMPILE_DEFINITIONS "maxclients=game_maxclients;dedicated=game_dedicated")
 endforeach()
@@ -81,7 +73,6 @@ add_executable(vkquake2 ${SOURCES})
 target_include_directories(vkquake2 PRIVATE ${Q2})
 target_compile_definitions(vkquake2 PRIVATE
   REF_HARD_LINKED GAME_HARD_LINKED C_ONLY stricmp=strcasecmp
-  # VkVita is Vulkan 1.0, so the allocator must not reach for 1.1+ functions
   VMA_VULKAN_VERSION=1000000 VMA_DEDICATED_ALLOCATION=0 VMA_BIND_MEMORY2=0 VMA_MEMORY_BUDGET=0
   VMA_BUFFER_DEVICE_ADDRESS=0 VMA_MEMORY_PRIORITY=0 VMA_KHR_MAINTENANCE4=0 VMA_KHR_MAINTENANCE5=0
   VMA_GET_PHYSICAL_DEVICE_PROPERTIES2=0 VMA_STATS_STRING_ENABLED=0

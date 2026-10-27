@@ -18,17 +18,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// music_vita.c -- the soundtrack from baseq2/music/trackXX.ogg.
-//
-// Takes the place of client/snd_miniaudio.c with the same commands and
-// cvars. A low priority thread loads the whole track into memory, decodes
-// it with stb_vorbis and plays it on the BGM audio port, which takes the
-// 44.1 kHz of the tracks directly, next to the sound effects on the main
-// port. After cd_loopcount plays a track gives way to the ambient
-// cd_looptrack, as on the PC.
-//
-// The main thread finds the file and hands its path over; the music thread
-// only loads, decodes and plays, so it never touches the engine.
 
 #include <psp2/audioout.h>
 #include <psp2/io/fcntl.h>
@@ -41,28 +30,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define STB_VORBIS_NO_PUSHDATA_API
 #include "../client/miniaudio/stb_vorbis.c"
 
-#define MUSIC_FRAMES 2048 // per output call, about 46 ms at 44.1 kHz
-#define MUSIC_PRIORITY 0xB0 // below the game, the music only has to keep up
-#define STATS_CHUNKS 200    // about 9 seconds
+#define MUSIC_FRAMES	2048
+#define MUSIC_PRIORITY	0xB0
 
 static cvar_t *cd_volume;
 static cvar_t *cd_loopcount;
 static cvar_t *cd_looptrack;
 static cvar_t *no_music;
 
-// main thread -> music thread. req_seq is negative while the other fields
-// are written and gets its new value afterwards; the thread rereads it
-// after copying them and starts over if it changed in between.
 static volatile int req_seq;
-static char req_path[MAX_OSPATH];   // empty = stop
-static volatile int req_restart;    // play the open track again from the start
+static char req_path[MAX_OSPATH];
+static volatile int req_restart;
 static volatile int req_paused;
-static volatile int req_volume;     // 0..SCE_AUDIO_VOLUME_0DB
-// music thread -> main thread
-static volatile int finished_seq = -1; // the request whose track ran out
-static volatile int failed_seq = -1;   // the request whose file did not open
-static volatile int stats_seq = -1;    // the request the timings below belong to
-static volatile unsigned stats_decode_avg, stats_decode_max, stats_output_avg; // microseconds
+static volatile int req_volume;
+
+static volatile int finished_seq = -1;
+static volatile int failed_seq = -1;
 
 static SceUID music_thread_id = -1;
 static volatile int music_quit;
@@ -75,10 +58,6 @@ static int loopcounter;
 
 static short pcm[2][MUSIC_FRAMES * 2];
 
-/* ------------------------------------------------------------------------ */
-/* Music thread                                                             */
-/* ------------------------------------------------------------------------ */
-// the whole file in one go, so playing never waits on the memory card
 static unsigned char *load_file(const char *path, int *size)
 {
 	unsigned char *data;
@@ -113,9 +92,6 @@ static int music_thread(SceSize args, void *argp)
 	unsigned char *file = NULL;
 	char path[MAX_OSPATH];
 	int port = -1, rate = 0, seen_seq = -1, cur = 0, volume = -1, done = 0;
-	unsigned chunks = 0;
-	SceUInt64 decode_sum = 0, decode_max = 0, output_sum = 0;
-	(void)args; (void)argp;
 
 	while (!music_quit)
 	{
@@ -124,7 +100,6 @@ static int music_thread(SceSize args, void *argp)
 			int seq = req_seq, restart;
 			if (seq < 0)
 			{
-				// the main thread is writing a request right now
 				sceKernelDelayThread(1000);
 				continue;
 			}
@@ -147,8 +122,6 @@ static int music_thread(SceSize args, void *argp)
 				v = NULL;
 				free(file);
 				file = NULL;
-				chunks = 0;
-				decode_sum = decode_max = output_sum = 0;
 				if (path[0])
 				{
 					int err, size;
@@ -193,13 +166,10 @@ static int music_thread(SceSize args, void *argp)
 			sceAudioOutSetVolume(port, SCE_AUDIO_VOLUME_FLAG_L_CH | SCE_AUDIO_VOLUME_FLAG_R_CH, vol);
 		}
 
-		// asked for two channels stb_vorbis doubles a mono track itself
-		SceUInt64 t0 = sceKernelGetProcessTimeWide();
 		int got = stb_vorbis_get_samples_short_interleaved(v, 2, pcm[cur], MUSIC_FRAMES * 2);
 		SceUInt64 t1 = sceKernelGetProcessTimeWide();
 		if (got <= 0)
 		{
-			// keep the track open so a loop only has to seek back
 			done = 1;
 			finished_seq = seen_seq;
 			continue;
@@ -210,19 +180,7 @@ static int music_thread(SceSize args, void *argp)
 		cur ^= 1;
 
 		SceUInt64 t2 = sceKernelGetProcessTimeWide();
-		decode_sum += t1 - t0;
-		output_sum += t2 - t1;
-		if (t1 - t0 > decode_max)
-			decode_max = t1 - t0;
-		if (++chunks == STATS_CHUNKS)
-		{
-			stats_decode_avg = (unsigned)(decode_sum / chunks);
-			stats_decode_max = (unsigned)decode_max;
-			stats_output_avg = (unsigned)(output_sum / chunks);
-			__sync_synchronize();
-			stats_seq = seen_seq;
-		}
-		// the port should hold us back; if it does not, wait out the chunk
+
 		if (t2 - t1 < 1000)
 			sceKernelDelayThread((SceUInt)(1000000ULL * MUSIC_FRAMES / rate / 2));
 	}
@@ -241,7 +199,7 @@ static int music_thread(SceSize args, void *argp)
 static void send_request(const char *path, int restart)
 {
 	int seq = req_seq + 1;
-	req_seq = -2; // marks the fields as being written
+	req_seq = -2;
 	__sync_synchronize();
 	Com_sprintf(req_path, sizeof(req_path), "%s", path ? path : "");
 	req_restart = restart;
@@ -267,7 +225,6 @@ static qboolean file_exists(const char *path)
 	return true;
 }
 
-// the gamedir first, then baseq2 for mods without their own music
 static qboolean find_track(int track, char *path, int size)
 {
 	Com_sprintf(path, size, "%s/music/track%02i.ogg", FS_Gamedir(), track);
@@ -277,9 +234,6 @@ static qboolean find_track(int track, char *path, int size)
 	return file_exists(path);
 }
 
-/* ------------------------------------------------------------------------ */
-/* Interface used by the client                                             */
-/* ------------------------------------------------------------------------ */
 static void Miniaudio_Pause(void)
 {
 	req_paused = 1;
@@ -394,7 +348,6 @@ void Miniaudio_Update(void)
 		req_volume = volume_for(cd_volume->value);
 	}
 
-	// volume 0 pauses, turning it up again resumes the level's track
 	if ((cd_volume->value == 0) != !enabled)
 	{
 		if (cd_volume->value == 0)
@@ -413,14 +366,6 @@ void Miniaudio_Update(void)
 		}
 	}
 
-	if (play_track && stats_seq == req_seq)
-	{
-		stats_seq = -1;
-		__sync_synchronize();
-		Com_DPrintf("Music: decoding %u us per chunk (max %u), output %u us, chunk %u us\n", stats_decode_avg,
-		            stats_decode_max, stats_output_avg, (unsigned)(1000000ULL * MUSIC_FRAMES / 44100));
-	}
-
 	if (play_track && failed_seq == req_seq)
 	{
 		Com_Printf("Music: could not play track %02i\n", play_track);
@@ -435,7 +380,7 @@ void Miniaudio_Update(void)
 			play_track = 0;
 			return;
 		}
-		// after cd_loopcount plays go to the ambient track, which then loops
+
 		if (++loopcounter == (int)cd_loopcount->value && (int)cd_looptrack->value != play_track)
 		{
 			int ambient = (int)cd_looptrack->value;
