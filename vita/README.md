@@ -50,6 +50,12 @@ shader gets compiled once, later starts load them from
 In the menus the d-pad moves, Cross selects and Circle or Start goes back.
 Everything can be rebound in the menu, the buttons show up as AUX keys there.
 
+## Multisampling
+
+The edges are smoothed with 2x MSAA by default. 4x also runs at 60 FPS in
+most places but leaves the GPU less room in big fights. Both can be set under
+Options, Video, multisampling.
+
 ## Building
 
 You need [VitaSDK](https://vitasdk.org) and a checkout of VkVita.

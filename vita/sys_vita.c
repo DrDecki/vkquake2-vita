@@ -339,7 +339,7 @@ static void Vita_WriteDefaultConfig(void)
 	      "bind TAB \"cmd help\"\n"          // select
 	      "set lookspring 0\n"
 	      "set lookstrafe 0\n"
-	      "set vk_msaa 0\n"
+	      "set vk_msaa 1\n"                 // 2x
 	      "set vk_vsync 1\n"
 	      "set hand 0\n", f);
 	fclose(f);
