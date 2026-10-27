@@ -92,7 +92,7 @@ target_compile_options(vkquake2 PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++17>
 )
 target_link_libraries(vkquake2 PRIVATE
-  VkVita::vkvita SceCtrl_stub SceAudio_stub ScePower_stub m stdc++
+  VkVita::vkvita SceCtrl_stub SceAudio_stub ScePower_stub SceNet_stub SceNetCtl_stub SceSysmodule_stub m stdc++
 )
 
 vita_create_self(vkquake2.self vkquake2 UNSAFE)

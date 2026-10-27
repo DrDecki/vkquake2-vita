@@ -145,3 +145,84 @@ int sceAudioOutReleasePort(int port) {
 	if (port >= 1 && port <= 4) g_ports[port - 1].len = 0;
 	return 0;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Network: sceNet on top of POSIX UDP sockets, so two PC builds can play   */
+/* against each other                                                       */
+/* ------------------------------------------------------------------------ */
+#include <psp2/net/net.h>
+#include <psp2/net/netctl.h>
+#include <psp2/sysmodule.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+static int net_err(void) {
+	int e = errno == EAGAIN || errno == EWOULDBLOCK ? SCE_NET_EWOULDBLOCK
+	      : errno == ECONNREFUSED                  ? SCE_NET_ECONNREFUSED
+	                                               : 0x7F;
+	return (int)(0x80410100u | (unsigned)e);
+}
+static void to_posix(const SceNetSockaddr *a, struct sockaddr_in *p) {
+	const SceNetSockaddrIn *s = (const SceNetSockaddrIn *)a;
+	memset(p, 0, sizeof(*p));
+	p->sin_family = AF_INET;
+	p->sin_port = s->sin_port;
+	p->sin_addr.s_addr = s->sin_addr.s_addr;
+}
+int sceSysmoduleIsLoaded(SceSysmoduleModuleId id) { (void)id; return SCE_SYSMODULE_LOADED; }
+int sceSysmoduleLoadModule(SceSysmoduleModuleId id) { (void)id; return 0; }
+int sceNetShowNetstat(void) { return (int)SCE_NET_ERROR_ENOTINIT; }
+int sceNetInit(SceNetInitParam *p) { return p && p->memory && p->size > 0 ? 0 : -1; }
+int sceNetTerm(void) { return 0; }
+int sceNetCtlInit(void) { return 0; }
+void sceNetCtlTerm(void) {}
+int sceNetCtlInetGetInfo(int code, SceNetCtlInfo *info) {
+	if (code != SCE_NETCTL_INFO_GET_IP_ADDRESS) return -1;
+	snprintf(info->ip_address, sizeof(info->ip_address), "127.0.0.1");
+	return 0;
+}
+int sceNetSocket(const char *name, int domain, int type, int protocol) {
+	(void)name;
+	if (domain != SCE_NET_AF_INET || type != SCE_NET_SOCK_DGRAM) return -1;
+	int s = socket(AF_INET, SOCK_DGRAM, protocol);
+	return s < 0 ? net_err() : s;
+}
+int sceNetSetsockopt(int s, int level, int opt, const void *val, unsigned int len) {
+	(void)len;
+	if (level != SCE_NET_SOL_SOCKET) return -1;
+	if (opt == SCE_NET_SO_NBIO) return fcntl(s, F_SETFL, *(const int *)val ? O_NONBLOCK : 0) < 0 ? net_err() : 0;
+	if (opt == SCE_NET_SO_BROADCAST) return setsockopt(s, SOL_SOCKET, SO_BROADCAST, val, sizeof(int)) < 0 ? net_err() : 0;
+	return -1;
+}
+int sceNetBind(int s, const SceNetSockaddr *addr, unsigned int len) {
+	(void)len;
+	struct sockaddr_in p;
+	to_posix(addr, &p);
+	return bind(s, (struct sockaddr *)&p, sizeof(p)) < 0 ? net_err() : 0;
+}
+int sceNetSendto(int s, const void *msg, unsigned int len, int flags, const SceNetSockaddr *to, unsigned int tolen) {
+	(void)flags; (void)tolen;
+	struct sockaddr_in p;
+	to_posix(to, &p);
+	ssize_t r = sendto(s, msg, len, 0, (struct sockaddr *)&p, sizeof(p));
+	return r < 0 ? net_err() : (int)r;
+}
+int sceNetRecvfrom(int s, void *buf, unsigned int len, int flags, SceNetSockaddr *from, unsigned int *fromlen) {
+	(void)flags;
+	struct sockaddr_in p;
+	socklen_t pl = sizeof(p);
+	ssize_t r = recvfrom(s, buf, len, 0, (struct sockaddr *)&p, &pl);
+	if (r < 0) return net_err();
+	SceNetSockaddrIn *o = (SceNetSockaddrIn *)from;
+	memset(o, 0, sizeof(*o));
+	o->sin_len = sizeof(*o);
+	o->sin_family = SCE_NET_AF_INET;
+	o->sin_port = p.sin_port;
+	o->sin_addr.s_addr = p.sin_addr.s_addr;
+	if (fromlen) *fromlen = sizeof(*o);
+	return (int)r;
+}
+int sceNetSocketClose(int s) { return close(s) < 0 ? net_err() : 0; }

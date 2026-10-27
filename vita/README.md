@@ -70,10 +70,13 @@ The VPK ends up in `build-vita/vkquake2.vpk` with the title ID `VKQUAKE02`.
 `vita/host/build_host.sh` builds the whole game for a PC against the VkVita
 mock, which is how crashes get caught before they reach a Vita.
 
-## What does not work yet
+## Network play
 
-- Network play, only the local server is there
-- `vk_showtris`, GXM has no line strips
+Multiplayer runs over Wi-Fi with UDP, so the Vita can join a Quake II server
+on the same network or host one (Multiplayer, Start Network Server). Enter
+servers as an IP address, like `192.168.1.20` or `192.168.1.20:27910`; host
+names are not looked up. The server browser finds servers on the local network.
+Connect the Vita to Wi-Fi before starting the game.
 
 ## License
 
