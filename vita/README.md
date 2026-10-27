@@ -17,7 +17,16 @@ the `baseq2` folder of your Quake II install to
 ux0:data/vkquake2/baseq2/pak0.pak
 ```
 
-Music works later on, the `.ogg` tracks go to `ux0:data/vkquake2/baseq2/music/`.
+For the music copy the `.ogg` tracks from the `music` folder of the GOG or
+Steam release to
+
+```
+ux0:data/vkquake2/baseq2/music/
+```
+
+The game runs fine without them, there is just no music then. `cd_volume`
+sets the volume, and `miniaudio play 5` or `miniaudio stop` work in the
+console like on the PC.
 
 Logs end up in `ux0:data/vkquake2/`: `vkquake2.log` is the game console and
 `vkvita.log` is the renderer. The first start takes a while because every
@@ -57,7 +66,6 @@ mock, which is how crashes get caught before they reach a Vita.
 
 ## What does not work yet
 
-- Music
 - Network play, only the local server is there
 - `vk_showtris`, GXM has no line strips
 

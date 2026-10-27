@@ -8,8 +8,8 @@ as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
 */
-// cd_vita.c -- there is no CD drive. Music from baseq2/music/*.ogg goes
-// through the Miniaudio_ functions, which are not hooked up yet.
+// cd_vita.c -- there is no CD drive. The music comes from the .ogg tracks
+// in baseq2/music, see music_vita.c.
 
 #include "../client/client.h"
 
@@ -39,25 +39,4 @@ void CDAudio_Update(void)
 void CDAudio_Activate(qboolean active)
 {
 	(void)active;
-}
-
-void Miniaudio_Init(void)
-{
-}
-
-void Miniaudio_Play(int track, qboolean looping)
-{
-	(void)track; (void)looping;
-}
-
-void Miniaudio_Stop(void)
-{
-}
-
-void Miniaudio_Update(void)
-{
-}
-
-void Miniaudio_Shutdown(void)
-{
 }

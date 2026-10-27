@@ -109,15 +109,39 @@ int sceKernelDeleteThread(SceUID id) {
 	return 0;
 }
 
-/* audio: takes a chunk every 512 frames worth of time */
+/* audio: each output call takes as long as its samples would play. With
+ * MOCK_BGM_DUMP set the BGM port writes its samples there as raw s16 stereo. */
+static struct { int type, len, freq; } g_ports[4];
+static FILE *g_bgm_dump;
 int sceAudioOutOpenPort(SceAudioOutPortType type, int len, int freq, SceAudioOutMode mode) {
-	(void)type; (void)len; (void)freq; (void)mode;
-	return 1;
+	(void)mode;
+	for (int i = 0; i < 4; i++)
+		if (!g_ports[i].len) {
+			g_ports[i].type = type; g_ports[i].len = len; g_ports[i].freq = freq;
+			if (type == SCE_AUDIO_OUT_PORT_TYPE_BGM && getenv("MOCK_BGM_DUMP") && !g_bgm_dump)
+				g_bgm_dump = fopen(getenv("MOCK_BGM_DUMP"), "wb");
+			fprintf(stderr, "mock audio: port %d type %d, %d frames at %d Hz\n", i + 1, type, len, freq);
+			return i + 1;
+		}
+	return (int)0x80260109;
 }
-int sceAudioOutSetVolume(int port, SceAudioOutChannelFlag ch, int *vol) { (void)port; (void)ch; (void)vol; return 0; }
-int sceAudioOutOutput(int port, const void *buf) {
-	(void)port;
-	if (buf) usleep(10667);
+int sceAudioOutSetVolume(int port, SceAudioOutChannelFlag ch, int *vol) {
+	(void)ch;
+	if (port >= 1 && port <= 4 && g_ports[port - 1].type == SCE_AUDIO_OUT_PORT_TYPE_BGM)
+		fprintf(stderr, "mock audio: BGM volume %d\n", vol[0]);
 	return 0;
 }
-int sceAudioOutReleasePort(int port) { (void)port; return 0; }
+int sceAudioOutOutput(int port, const void *buf) {
+	if (port < 1 || port > 4 || !g_ports[port - 1].len) return (int)0x80260102;
+	if (!buf) return 0;
+	if (g_ports[port - 1].type == SCE_AUDIO_OUT_PORT_TYPE_BGM && g_bgm_dump) {
+		fwrite(buf, 4, g_ports[port - 1].len, g_bgm_dump);
+		fflush(g_bgm_dump);
+	}
+	usleep((useconds_t)(1000000LL * g_ports[port - 1].len / g_ports[port - 1].freq));
+	return 0;
+}
+int sceAudioOutReleasePort(int port) {
+	if (port >= 1 && port <= 4) g_ports[port - 1].len = 0;
+	return 0;
+}
