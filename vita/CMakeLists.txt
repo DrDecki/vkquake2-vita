@@ -13,7 +13,7 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "vkQuake2")
 set(VITA_TITLEID  "VKQUAKE02")
-set(VITA_VERSION  "01.00")
+set(VITA_VERSION  "01.10")
 
 set(VKVITA_DIR "" CACHE PATH "VkVita source tree (empty: use the installed VkVita)")
 if(VKVITA_DIR)
@@ -87,6 +87,14 @@ target_link_libraries(vkquake2 PRIVATE
 )
 
 vita_create_self(vkquake2.self vkquake2 UNSAFE)
+
+file(GLOB VITA_SHADER_PACK ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.gxp)
+set(VITA_SHADER_FILES)
+foreach(f ${VITA_SHADER_PACK})
+  get_filename_component(n ${f} NAME)
+  list(APPEND VITA_SHADER_FILES FILE ${f} shaders/${n})
+endforeach()
+
 vita_create_vpk(vkquake2.vpk ${VITA_TITLEID} vkquake2.self
   VERSION ${VITA_VERSION}
   NAME ${VITA_APP_NAME}
@@ -94,4 +102,5 @@ vita_create_vpk(vkquake2.vpk ${VITA_TITLEID} vkquake2.self
   FILE ${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
   FILE ${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
   FILE ${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+  ${VITA_SHADER_FILES}
 )

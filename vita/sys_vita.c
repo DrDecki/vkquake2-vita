@@ -391,6 +391,7 @@ static void Vita_ConfigureVkVita(void)
 	cfg.compatFlags = VKV_COMPAT_SHADER_CACHE;
 	cfg.logPath = VITA_BASEDIR "/vkvita.log";
 	cfg.shaderDir = VITA_BASEDIR "/shaders";
+	cfg.shaderPackDir = "app0:shaders";
 	cfg.profileInterval = 600;
 	vkvSetConfig(&cfg);
 
