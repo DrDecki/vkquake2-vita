@@ -2,13 +2,14 @@
 
 # vkQuake2 for PS Vita
 
-This is Quake II running on the PS Vita with its Vulkan renderer. Not a
-software renderer, not OpenGL, but the actual Vulkan code from
-[vkQuake2](https://github.com/kondrak/vkQuake2). The Vita has no Vulkan
+This is Quake II running on the PS Vita with the Vulkan renderer from
+[vkQuake2](https://github.com/kondrak/vkQuake2). Not a software renderer,
+not OpenGL, but the actual Vulkan code. The Vita has no Vulkan
 driver, so this port runs on [VkVita](https://github.com/DrDecki/vkvita), a
 Vulkan layer Claude wrote on top of the Vita's GXM graphics API. Even the
-original SPIR-V shaders are used. They get translated for the Vita GPU when
-the game starts.
+SPIR-V shaders of vkQuake2 are used. The Vita GPU can't run SPIR-V, so they
+get translated to Cg and compiled with the system shader compiler when the
+game starts.
 
 What works:
 
@@ -21,6 +22,10 @@ What works:
 ## What you need
 
 - a PS Vita with HENkaku or Enso and VitaShell
+- `libshacccg.suprx` in `ur0:data/`. This is the Vita's shader compiler, the
+  game needs it to compile its shaders. If you don't have it yet, the
+  [ShaRKF00D](https://github.com/Rinnegatamante/ShaRKF00D) app extracts it
+  for you
 - the game files of Quake II. They are not included, you need your own copy
   (Steam, GOG or the original CD, version 3.20)
 
