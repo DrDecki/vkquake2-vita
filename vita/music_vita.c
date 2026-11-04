@@ -225,12 +225,25 @@ static qboolean file_exists(const char *path)
 	return true;
 }
 
+static int map_gog_track(int track)
+{
+	static const int xatrix[] = { 9, 13, 14, 7, 16, 2, 15, 3, 4, 18 };
+	char *game = Cvar_VariableString("game");
+	if (track < 2 || track > 11)
+		return track;
+	if (!Q_stricmp(game, "rogue"))
+		return track + 10;
+	if (!Q_stricmp(game, "xatrix"))
+		return xatrix[track - 2];
+	return track;
+}
+
 static qboolean find_track(int track, char *path, int size)
 {
 	Com_sprintf(path, size, "%s/music/track%02i.ogg", FS_Gamedir(), track);
 	if (file_exists(path))
 		return true;
-	Com_sprintf(path, size, VITA_BASEDIR "/" BASEDIRNAME "/music/track%02i.ogg", track);
+	Com_sprintf(path, size, VITA_BASEDIR "/" BASEDIRNAME "/music/track%02i.ogg", map_gog_track(track));
 	return file_exists(path);
 }
 

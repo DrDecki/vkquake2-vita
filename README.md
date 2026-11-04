@@ -48,8 +48,9 @@ What works:
    it other players show up as white diamonds.
 
 4. Optional: for music, copy the `.ogg` tracks (`track02.ogg` to
-   `track21.ogg`) from the GOG or Steam release into
-   `ux0:data/vkquake2/baseq2/music/`.
+   `track21.ogg`) from the `music` folder of the GOG or Steam release into
+   `ux0:data/vkquake2/baseq2/music/`. Tracks 12 to 21 are the music of the
+   mission packs.
 
 5. Start the game.
 
@@ -66,8 +67,8 @@ ux0:data/vkquake2/rogue/pak0.pak      Ground Zero
 Zaero goes into `zaero` and Capture the Flag into `ctf` the same way.
 
 Then pick Game, change game in the menu. The game restarts with the mission
-pack loaded. Music for a mission pack goes into its own `music` folder, for
-example `ux0:data/vkquake2/rogue/music/track02.ogg`.
+pack loaded. The mission packs play their music from the GOG and Steam tracks
+in `baseq2/music`, nothing extra to copy.
 
 ## Controls
 
