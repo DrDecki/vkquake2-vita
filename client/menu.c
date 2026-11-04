@@ -3942,6 +3942,9 @@ const char *M_Quit_Key (int key)
 		M_PopMenu ();
 		break;
 
+#ifdef __vita__
+	case K_ENTER:
+#endif
 	case 'Y':
 	case 'y':
 		cls.key_dest = key_console;

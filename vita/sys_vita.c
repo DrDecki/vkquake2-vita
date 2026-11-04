@@ -412,6 +412,7 @@ int main(int argc, char **argv)
 	sceIoMkdir(VITA_BASEDIR, 0777);
 	sceIoMkdir(VITA_BASEDIR "/shaders", 0777);
 	Vita_ConfigureVkVita();
+	vkvShowSplash();
 	Vita_WriteDefaultConfig();
 	Vita_Log("vkQuake2 for PS Vita, data in " VITA_BASEDIR "\n");
 

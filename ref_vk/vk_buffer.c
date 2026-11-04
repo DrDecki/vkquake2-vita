@@ -126,6 +126,9 @@ VkResult QVk_CreateStagingBuffer(VkDeviceSize size, qvkbuffer_t *dstBuffer, VkMe
 
 VkResult QVk_CreateUniformBuffer(VkDeviceSize size, qvkbuffer_t *dstBuffer, VkMemoryPropertyFlags reqMemFlags, VkMemoryPropertyFlags prefMemFlags)
 {
+#ifdef __vita__
+	reqMemFlags |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+#endif
 	qvkbufferopts_t dstOpts = {
 		.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		.reqMemFlags = reqMemFlags,

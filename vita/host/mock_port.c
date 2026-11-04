@@ -68,39 +68,6 @@ int sceIoDclose(SceUID fd) {
 	return 0;
 }
 
-typedef struct { SceKernelThreadEntry entry; pthread_t th; int used; } MockThread;
-static MockThread g_threads[8];
-static void *thread_main(void *arg) {
-	MockThread *t = arg;
-	t->entry(0, NULL);
-	return NULL;
-}
-SceUID sceKernelCreateThread(const char *name, SceKernelThreadEntry entry, int prio, SceSize stack, SceUInt attr,
-                             int cpu, const SceKernelThreadOptParam *opt) {
-	(void)name; (void)prio; (void)stack; (void)attr; (void)cpu; (void)opt;
-	for (int i = 0; i < 8; i++)
-		if (!g_threads[i].used) {
-			g_threads[i].used = 1;
-			g_threads[i].entry = entry;
-			return 0x2000 + i;
-		}
-	return -1;
-}
-int sceKernelStartThread(SceUID id, SceSize len, void *argp) {
-	(void)len; (void)argp;
-	MockThread *t = &g_threads[id - 0x2000];
-	return pthread_create(&t->th, NULL, thread_main, t) ? -1 : 0;
-}
-int sceKernelWaitThreadEnd(SceUID id, int *stat, SceUInt *timeout) {
-	(void)stat; (void)timeout;
-	pthread_join(g_threads[id - 0x2000].th, NULL);
-	return 0;
-}
-int sceKernelDeleteThread(SceUID id) {
-	g_threads[id - 0x2000].used = 0;
-	return 0;
-}
-
 static struct { int type, len, freq; } g_ports[4];
 static FILE *g_bgm_dump;
 int sceAudioOutOpenPort(SceAudioOutPortType type, int len, int freq, SceAudioOutMode mode) {
