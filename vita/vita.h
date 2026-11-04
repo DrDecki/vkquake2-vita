@@ -20,4 +20,7 @@ of the License, or (at your option) any later version.
 
 void Vita_Log(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
+int Vita_ListGames(const char **dirs, const char **names, int max);
+void Vita_RestartWithGame(const char *dir);
+
 #endif

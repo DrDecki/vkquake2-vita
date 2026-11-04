@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <psp2/io/dirent.h>
 #include <psp2/ctrl.h>
 #include <psp2/power.h>
+#include <psp2/appmgr.h>
 
 #include <vkvita/vkvita.h>
 
@@ -47,7 +48,23 @@ int curtime;
 
 static FILE *log_file;
 
-void *GetGameAPI(void *import);
+void *GetGameAPI_game(void *import);
+void *GetGameAPI_xatrix(void *import);
+void *GetGameAPI_rogue(void *import);
+void *GetGameAPI_zaero(void *import);
+void *GetGameAPI_ctf(void *import);
+
+static const struct
+{
+	const char *dir, *name;
+	void *(*api)(void *import);
+} games[] = {
+	{ BASEDIRNAME, "Quake II", GetGameAPI_game },
+	{ "xatrix", "The Reckoning", GetGameAPI_xatrix },
+	{ "rogue", "Ground Zero", GetGameAPI_rogue },
+	{ "zaero", "Zaero", GetGameAPI_zaero },
+	{ "ctf", "Capture the Flag", GetGameAPI_ctf },
+};
 
 void Vita_Log(const char *fmt, ...)
 {
@@ -145,7 +162,37 @@ void Sys_UnloadGame(void)
 
 void *Sys_GetGameAPI(void *parms)
 {
-	return GetGameAPI(parms);
+	char *dir = Cvar_VariableString("game");
+	for (int i = 1; i < sizeof(games) / sizeof(games[0]); i++)
+		if (!Q_stricmp(dir, (char *)games[i].dir))
+			return games[i].api(parms);
+	return GetGameAPI_game(parms);
+}
+
+int Vita_ListGames(const char **dirs, const char **names, int max)
+{
+	int n = 0;
+	for (int i = 0; i < sizeof(games) / sizeof(games[0]) && n < max; i++)
+	{
+		SceIoStat st;
+		if (i && sceIoGetstat(va("%s/%s", VITA_BASEDIR, games[i].dir), &st) < 0)
+			continue;
+		dirs[n] = games[i].dir;
+		names[n] = games[i].name;
+		n++;
+	}
+	return n;
+}
+
+void Vita_RestartWithGame(const char *dir)
+{
+	char *argv[] = { "+set", "game", (char *)dir, NULL };
+	CL_Shutdown();
+	Qcommon_Shutdown();
+	if (log_file)
+		fclose(log_file);
+	sceAppMgrLoadExec("app0:eboot.bin", argv, NULL);
+	sceKernelExitProcess(0);
 }
 
 #define HUNK_ARENA_SIZE (64 * 1024 * 1024)
@@ -377,7 +424,7 @@ static void Vita_WriteDefaultConfig(void)
 	      "bind TAB \"cmd help\"\n"
 	      "set lookspring 0\n"
 	      "set lookstrafe 0\n"
-	      "set vk_msaa 1\n"
+	      "set vk_msaa 2\n"
 	      "set vk_vsync 1\n"
 	      "set hand 0\n", f);
 	fclose(f);
@@ -401,7 +448,12 @@ static void Vita_ConfigureVkVita(void)
 int main(int argc, char **argv)
 {
 	int time, oldtime, newtime;
-	char *args[] = { "vkquake2", "+set", "basedir", VITA_BASEDIR, "+set", "cddir", VITA_BASEDIR };
+	char *args[16] = { "vkquake2", "+set", "basedir", VITA_BASEDIR, "+set", "cddir", VITA_BASEDIR };
+	int nargs = 7;
+
+	for (int i = 0; i < argc && nargs < 16; i++)
+		if (!strchr(argv[i], ':'))
+			args[nargs++] = argv[i];
 
 	scePowerSetArmClockFrequency(444);
 	scePowerSetBusClockFrequency(222);
@@ -420,9 +472,9 @@ int main(int argc, char **argv)
 
 #ifdef VITA_HOST_TEST
 
-	char *testArgs[16];
+	char *testArgs[32];
 	int testArgc = 0, testFrames = getenv("VITA_TEST_FRAMES") ? atoi(getenv("VITA_TEST_FRAMES")) : 300;
-	for (unsigned k = 0; k < sizeof(args) / sizeof(args[0]); k++)
+	for (int k = 0; k < nargs; k++)
 		testArgs[testArgc++] = args[k];
 	if (getenv("VITA_TEST_MAP"))
 	{
@@ -432,7 +484,7 @@ int main(int argc, char **argv)
 	if (getenv("VITA_TEST_ARGS"))
 	{
 		char *a = strdup(getenv("VITA_TEST_ARGS")), *tok = strtok(a, " ");
-		while (tok && testArgc < 16)
+		while (tok && testArgc < 32)
 		{
 			testArgs[testArgc++] = tok;
 			tok = strtok(NULL, " ");
@@ -440,7 +492,7 @@ int main(int argc, char **argv)
 	}
 	Qcommon_Init(testArgc, testArgs);
 #else
-	Qcommon_Init(sizeof(args) / sizeof(args[0]), args);
+	Qcommon_Init(nargs, args);
 #endif
 	oldtime = Sys_Milliseconds();
 	for (;;)

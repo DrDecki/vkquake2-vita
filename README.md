@@ -14,9 +14,10 @@ VPK, so you don't need the shader compiler on your Vita.
 What works:
 
 - the whole single player campaign
+- the mission packs The Reckoning and Ground Zero, plus Zaero and Capture the Flag
 - deathmatch over Wi-Fi, against other Vitas or PCs
 - sound effects and the ogg soundtrack
-- 2x MSAA by default, 4x if you want it
+- 4x MSAA
 - 60 FPS almost everywhere
 
 ## What you need
@@ -51,6 +52,22 @@ What works:
    `ux0:data/vkquake2/baseq2/music/`.
 
 5. Start the game.
+
+## Mission packs
+
+The Reckoning and Ground Zero need their own game files, they come with the
+GOG and Steam release. Copy the folders next to `baseq2`:
+
+```
+ux0:data/vkquake2/xatrix/pak0.pak     The Reckoning
+ux0:data/vkquake2/rogue/pak0.pak      Ground Zero
+```
+
+Zaero goes into `zaero` and Capture the Flag into `ctf` the same way.
+
+Then pick Game, change game in the menu. The game restarts with the mission
+pack loaded. Music for a mission pack goes into its own `music` folder, for
+example `ux0:data/vkquake2/rogue/music/track02.ogg`.
 
 ## Controls
 
@@ -92,8 +109,9 @@ and the `players` folder into its `baseq2` folder and type
 
 ## Settings
 
-Antialiasing can be changed under Options, Video. 2x is the default. 4x
-usually still runs at 60 FPS but has less headroom in big fights.
+Antialiasing can be changed under Options, Video. 4x is the default and
+costs no more than 2x on the Vita. If you played an older version, your
+saved settings keep 2x until you switch it there.
 
 ## If something goes wrong
 

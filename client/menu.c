@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "client.h"
 #include "../client/qmenu.h"
+#ifdef __vita__
+#include "../vita/vita.h"
+#endif
 
 extern cvar_t *vid_hudscale;
 
@@ -1958,6 +1961,60 @@ static void CreditsFunc( void *unused )
 	M_Menu_Credits_f();
 }
 
+#ifdef __vita__
+#define MAX_VITA_GAMES 8
+
+static menuframework_s	s_change_game_menu;
+static menuaction_s		s_change_game_actions[MAX_VITA_GAMES];
+static menuaction_s		s_change_game_action;
+static const char		*s_game_dirs[MAX_VITA_GAMES], *s_game_names[MAX_VITA_GAMES];
+static int				s_num_games;
+
+static void ChangeGameFunc( void *self )
+{
+	const char *dir = s_game_dirs[((menuaction_s *)self)->generic.localdata[0]];
+	const char *current = Cvar_VariableString( "game" );
+	if ( !Q_stricmp( (char *)dir, (char *)current ) || ( !current[0] && !Q_stricmp( (char *)dir, BASEDIRNAME ) ) )
+	{
+		M_PopMenu();
+		return;
+	}
+	Vita_RestartWithGame( dir );
+}
+
+static void ChangeGame_MenuDraw( void )
+{
+	M_Banner( "m_banner_game" );
+	Menu_AdjustCursor( &s_change_game_menu, 1 );
+	Menu_Draw( &s_change_game_menu );
+}
+
+static const char *ChangeGame_MenuKey( int key )
+{
+	return Default_MenuKey( &s_change_game_menu, key );
+}
+
+static void M_Menu_ChangeGame_f( void *unused )
+{
+	s_change_game_menu.x = viddef.width * 0.50;
+	s_change_game_menu.nitems = 0;
+	for ( int i = 0; i < s_num_games; i++ )
+	{
+		menuaction_s *a = &s_change_game_actions[i];
+		memset( a, 0, sizeof( *a ) );
+		a->generic.type = MTYPE_ACTION;
+		a->generic.flags = QMF_LEFT_JUSTIFY;
+		a->generic.y = i * 10 * vid_hudscale->value;
+		a->generic.name = s_game_names[i];
+		a->generic.localdata[0] = i;
+		a->generic.callback = ChangeGameFunc;
+		Menu_AddItem( &s_change_game_menu, a );
+	}
+	Menu_Center( &s_change_game_menu );
+	M_PushMenu( ChangeGame_MenuDraw, ChangeGame_MenuKey );
+}
+#endif
+
 void Game_MenuInit( void )
 {
 	s_game_menu.x = viddef.width * 0.50;
@@ -2023,6 +2080,21 @@ void Game_MenuInit( void )
 	Menu_AddItem( &s_game_menu, ( void * ) &s_save_game_action );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_blankline );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_credits_action );
+
+#ifdef __vita__
+	s_num_games = Vita_ListGames( s_game_dirs, s_game_names, MAX_VITA_GAMES );
+	if ( s_num_games > 1 )
+	{
+		s_change_game_action.generic.type = MTYPE_ACTION;
+		s_change_game_action.generic.flags = QMF_LEFT_JUSTIFY;
+		s_change_game_action.generic.x = 0;
+		s_change_game_action.generic.y = 90 * vid_hudscale->value;
+		s_change_game_action.generic.name = "change game";
+		s_change_game_action.generic.callback = M_Menu_ChangeGame_f;
+		Menu_AddItem( &s_game_menu, ( void * ) &s_blankline );
+		Menu_AddItem( &s_game_menu, ( void * ) &s_change_game_action );
+	}
+#endif
 
 	Menu_Center( &s_game_menu );
 }

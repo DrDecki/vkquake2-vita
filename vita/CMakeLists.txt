@@ -45,34 +45,43 @@ set(REF_SOURCES
   ref_vk/vk_rsurf.c ref_vk/vk_shaders.c ref_vk/vk_swapchain.c ref_vk/vk_validation.c ref_vk/vk_warp.c
   ref_vk/vk_mem_alloc.cpp
 )
-set(GAME_SOURCES
-  game/g_ai.c game/g_chase.c game/g_cmds.c game/g_combat.c game/g_func.c game/g_items.c game/g_main.c
-  game/g_misc.c game/g_monster.c game/g_phys.c game/g_save.c game/g_spawn.c game/g_svcmds.c game/g_target.c
-  game/g_trigger.c game/g_turret.c game/g_utils.c game/g_weapon.c game/m_actor.c game/m_berserk.c
-  game/m_boss2.c game/m_boss3.c game/m_boss31.c game/m_boss32.c game/m_brain.c game/m_chick.c game/m_flash.c
-  game/m_flipper.c game/m_float.c game/m_flyer.c game/m_gladiator.c game/m_gunner.c game/m_hover.c
-  game/m_infantry.c game/m_insane.c game/m_medic.c game/m_move.c game/m_mutant.c game/m_parasite.c
-  game/m_soldier.c game/m_supertank.c game/m_tank.c game/p_client.c game/p_hud.c game/p_trail.c game/p_view.c
-  game/p_weapon.c game/q_shared.c
-)
+set(GAME_SHARED_SOURCES game/q_shared.c game/m_flash.c)
 set(PLATFORM_SOURCES
   vita/sys_vita.c vita/in_vita.c vita/vid_vita.c vita/vk_imp.c vita/snd_vita.c vita/net_vita.c vita/cd_vita.c vita/music_vita.c
   linux/glob.c linux/vid_menu.c
 )
 
 set(SOURCES)
-foreach(f ${CLIENT_SOURCES} ${COMMON_SOURCES} ${SERVER_SOURCES} ${REF_SOURCES} ${GAME_SOURCES} ${PLATFORM_SOURCES})
+foreach(f ${CLIENT_SOURCES} ${COMMON_SOURCES} ${SERVER_SOURCES} ${REF_SOURCES} ${GAME_SHARED_SOURCES} ${PLATFORM_SOURCES})
   list(APPEND SOURCES ${Q2}/${f})
 endforeach()
 
-foreach(f ${GAME_SOURCES})
-  set_source_files_properties(${Q2}/${f} PROPERTIES COMPILE_DEFINITIONS "maxclients=game_maxclients;dedicated=game_dedicated")
+# Each game module (baseq2 and the mission packs) is linked into one object
+# with only GetGameAPI left global and renamed to GetGameAPI_<dir>, like a DLL.
+# Sys_GetGameAPI picks one by the game cvar.
+set(GAME_MODULES game xatrix rogue zaero ctf)
+set(GAME_OBJECTS)
+foreach(m ${GAME_MODULES})
+  file(GLOB mod_sources ${Q2}/${m}/*.c)
+  list(FILTER mod_sources EXCLUDE REGEX "rogue/m_move2[.]c$")
+  add_library(game_${m} OBJECT ${mod_sources})
+  target_compile_definitions(game_${m} PRIVATE C_ONLY stricmp=strcasecmp)
+  target_compile_options(game_${m} PRIVATE -O2 -std=gnu11 -fcommon -fno-strict-aliasing -w)
+  set(obj ${CMAKE_CURRENT_BINARY_DIR}/game_${m}.o)
+  add_custom_command(OUTPUT ${obj}
+    COMMAND ${CMAKE_LINKER} -r -d -o ${obj}.tmp $<TARGET_OBJECTS:game_${m}>
+    COMMAND ${CMAKE_OBJCOPY} --keep-global-symbol=GetGameAPI ${obj}.tmp ${obj}.tmp2
+    COMMAND ${CMAKE_OBJCOPY} --redefine-sym GetGameAPI=GetGameAPI_${m} ${obj}.tmp2 ${obj}
+    DEPENDS game_${m} $<TARGET_OBJECTS:game_${m}>
+    COMMAND_EXPAND_LISTS VERBATIM)
+  list(APPEND GAME_OBJECTS ${obj})
 endforeach()
+set_source_files_properties(${GAME_OBJECTS} PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
 
-add_executable(vkquake2 ${SOURCES})
+add_executable(vkquake2 ${SOURCES} ${GAME_OBJECTS})
 target_include_directories(vkquake2 PRIVATE ${Q2})
 target_compile_definitions(vkquake2 PRIVATE
-  REF_HARD_LINKED GAME_HARD_LINKED C_ONLY stricmp=strcasecmp
+  REF_HARD_LINKED C_ONLY stricmp=strcasecmp
   VMA_VULKAN_VERSION=1000000 VMA_DEDICATED_ALLOCATION=0 VMA_BIND_MEMORY2=0 VMA_MEMORY_BUDGET=0
   VMA_BUFFER_DEVICE_ADDRESS=0 VMA_MEMORY_PRIORITY=0 VMA_KHR_MAINTENANCE4=0 VMA_KHR_MAINTENANCE5=0
   VMA_GET_PHYSICAL_DEVICE_PROPERTIES2=0 VMA_STATS_STRING_ENABLED=0
@@ -83,7 +92,7 @@ target_compile_options(vkquake2 PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++17>
 )
 target_link_libraries(vkquake2 PRIVATE
-  VkVita::vkvita SceCtrl_stub SceAudio_stub ScePower_stub SceNet_stub SceNetCtl_stub SceSysmodule_stub m stdc++
+  VkVita::vkvita SceAppMgr_stub SceCtrl_stub SceAudio_stub ScePower_stub SceNet_stub SceNetCtl_stub SceSysmodule_stub m stdc++
 )
 
 vita_create_self(vkquake2.self vkquake2 UNSAFE)

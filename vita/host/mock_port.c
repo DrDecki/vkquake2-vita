@@ -1,3 +1,4 @@
+#include <psp2/appmgr.h>
 #include <psp2/audioout.h>
 #include <psp2/io/dirent.h>
 #include <psp2/io/stat.h>
@@ -31,6 +32,13 @@ int scePowerSetGpuClockFrequency(int f) { (void)f; return 0; }
 int scePowerSetGpuXbarClockFrequency(int f) { (void)f; return 0; }
 int sceKernelChangeThreadVfpException(SceUInt32 clear, SceUInt32 set) { (void)clear; (void)set; return 0; }
 
+int sceAppMgrLoadExec(const char *path, char *const argv[], const SceAppMgrExecOptParam *opt) {
+	(void)opt;
+	printf("[mock] restart %s", path);
+	for (int i = 0; argv && argv[i]; i++) printf(" %s", argv[i]);
+	printf("\n");
+	exit(0);
+}
 int sceIoGetstat(const char *file, SceIoStat *st) {
 	char p[1024];
 	struct stat s;
