@@ -30,6 +30,9 @@ int scePowerSetArmClockFrequency(int f) { (void)f; return 0; }
 int scePowerSetBusClockFrequency(int f) { (void)f; return 0; }
 int scePowerSetGpuClockFrequency(int f) { (void)f; return 0; }
 int scePowerSetGpuXbarClockFrequency(int f) { (void)f; return 0; }
+int scePowerGetArmClockFrequency(void) { return 444; }
+int scePowerGetBusClockFrequency(void) { return 222; }
+int scePowerGetGpuClockFrequency(void) { return 222; }
 int sceKernelChangeThreadVfpException(SceUInt32 clear, SceUInt32 set) { (void)clear; (void)set; return 0; }
 
 int sceAppMgrLoadExec(const char *path, char *const argv[], const SceAppMgrExecOptParam *opt) {
