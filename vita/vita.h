@@ -19,6 +19,8 @@ of the License, or (at your option) any later version.
 #define VITA_SCREEN_HEIGHT 544
 
 void Vita_Log(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* boot_vita.c: the 1997 PC start up screen shown while the game loads */
+void Vita_SetBootScreen(void);
 
 int Vita_ListGames(const char **dirs, const char **names, int max);
 void Vita_RestartWithGame(const char *dir);

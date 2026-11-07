@@ -47,7 +47,7 @@ set(REF_SOURCES
 )
 set(GAME_SHARED_SOURCES game/q_shared.c game/m_flash.c)
 set(PLATFORM_SOURCES
-  vita/sys_vita.c vita/in_vita.c vita/vid_vita.c vita/vk_imp.c vita/snd_vita.c vita/net_vita.c vita/cd_vita.c vita/music_vita.c
+  vita/sys_vita.c vita/in_vita.c vita/vid_vita.c vita/vk_imp.c vita/snd_vita.c vita/net_vita.c vita/cd_vita.c vita/music_vita.c vita/boot_vita.c
   linux/glob.c linux/vid_menu.c
 )
 
