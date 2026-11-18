@@ -13,7 +13,7 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "vkQuake2")
 set(VITA_TITLEID  "VKQUAKE02")
-set(VITA_VERSION  "01.10")
+set(VITA_VERSION  "01.11")
 
 set(VKVITA_DIR "" CACHE PATH "VkVita source tree (empty: use the installed VkVita)")
 if(VKVITA_DIR)
